@@ -1,31 +1,18 @@
-
-
 services:
   - type: web
-    name: RAG-Bot Backend
+    name: rag-bot-backend
     env: python
     region: oregon
     branch: main
     plan: starter
+
     buildCommand: "cd backend && pip install -r requirements.txt"
     startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+
     envVars:
       - key: GROQ_API_KEY
-        scope: env
+        sync: false
+
     autoDeploy: true
-    disk: 1024
-    instances: 1
+
     healthCheckPath: /health
-    healthCheckIntervalSeconds: 15
-    healthCheckTimeoutSeconds: 10
-    healthCheckUnhealthyThreshold: 2
-    healthCheckHealthyThreshold: 1
-    readinessCheckPath: /health
-    readinessCheckIntervalSeconds: 10
-    readinessCheckTimeoutSeconds: 5
-    readinessCheckUnhealthyThreshold: 2
-    readinessCheckHealthyThreshold: 1
-    serviceDetails:
-      buildEnvironment: python
-      instanceType: standard
-    runtime: "python-3.12"
