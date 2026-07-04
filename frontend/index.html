@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Chatbot — AI Knowledge Assistant</title>
+  <meta name="description" content="A powerful RAG-based AI chatbot that answers questions from your documents using retrieval-augmented generation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Background canvas for animated particles ── -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ── App Shell ── -->
+  <div class="app-shell">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="logo-text">RAG<span class="accent">Chat</span></span>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Upload Zone -->
+      <div class="sidebar-section">
+        <h2 class="sidebar-section-title">Knowledge Base</h2>
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17,8 12,3 7,8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="upload-label">Drop files here</p>
+          <p class="upload-sub">PDF, DOCX, TXT, MD</p>
+          <label class="upload-btn" for="file-input" id="upload-btn-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Choose File
+          </label>
+          <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt,.md" hidden />
+        </div>
+
+        <!-- Paste Text Toggle -->
+        <button class="paste-toggle" id="paste-toggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          </svg>
+          Paste Text
+        </button>
+
+        <div class="paste-panel" id="paste-panel" style="display:none;">
+          <input type="text" id="paste-source-name" placeholder="Source name (optional)" class="paste-source-input"/>
+          <textarea id="paste-text" placeholder="Paste your text content here…" rows="5" class="paste-textarea"></textarea>
+          <button class="btn-primary" id="ingest-text-btn">Ingest Text</button>
+        </div>
+
+        <!-- Upload Progress -->
+        <div class="upload-progress" id="upload-progress" style="display:none;">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+          <span class="progress-label" id="progress-label">Processing…</span>
+        </div>
+      </div>
+
+      <!-- Document List -->
+      <div class="sidebar-section doc-list-section">
+        <div class="doc-list-header">
+          <h2 class="sidebar-section-title">Documents</h2>
+          <button class="btn-danger-sm" id="clear-all-btn" title="Clear all documents">Clear All</button>
+        </div>
+        <div id="doc-list" class="doc-list">
+          <div class="doc-empty" id="doc-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
+            </svg>
+            <p>No documents yet.<br/>Upload files above.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-label" id="status-label">Connecting…</span>
+      </div>
+    </aside>
+
+    <!-- ── Main Chat Area ── -->
+    <main class="chat-main">
+
+      <!-- Top Bar -->
+      <header class="chat-header">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="chat-header-info">
+          <h1 class="chat-title">AI Knowledge Assistant</h1>
+          <span class="chat-subtitle" id="chat-subtitle">Powered by RAG + Groq</span>
+        </div>
+        <button class="btn-ghost" id="clear-chat-btn" title="Clear conversation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <polyline points="3,6 5,6 21,6"/><path d="M19,6v14a2,2,0,01-2,2H7a2,2,0,01-2-2V6m3,0V4a2,2,0,012-2h4a2,2,0,012,2v2"/>
+          </svg>
+          Clear Chat
+        </button>
+      </header>
+
+      <!-- Messages Area -->
+      <div class="messages-area" id="messages-area">
+        <!-- Welcome Message -->
+        <div class="welcome-screen" id="welcome-screen">
+          <div class="welcome-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <h2>Ask Anything About Your Documents</h2>
+          <p>Upload PDFs, Word docs, or text files in the sidebar, then ask questions. I'll find the most relevant information and cite my sources.</p>
+          <div class="welcome-examples">
+            <button class="example-chip" onclick="useExample(this)">Summarize the main points</button>
+            <button class="example-chip" onclick="useExample(this)">What are the key findings?</button>
+            <button class="example-chip" onclick="useExample(this)">Explain the methodology</button>
+            <button class="example-chip" onclick="useExample(this)">List the conclusions</button>
+          </div>
+        </div>
+
+        <div id="messages-list"></div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-wrap">
+          <textarea
+            id="chat-input"
+            class="chat-input"
+            placeholder="Ask a question about your documents…"
+            rows="1"
+            maxlength="4000"
+          ></textarea>
+          <button class="send-btn" id="send-btn" title="Send (Enter)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/>
+            </svg>
+          </button>
+        </div>
+        <p class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
