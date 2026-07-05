@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: rag-bot-backend
+    env: python
+    rootDir: backend
+    region: oregon
+    plan: free
+
+    branch: main
+
+    buildCommand: |
+      pip install --no-cache-dir -r requirements.txt
+
+    startCommand: |
+      python main.py
+
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+
+    autoDeploy: true
+    healthCheckPath: /health
