@@ -3,10 +3,17 @@ services:
     name: rag-bot-backend
     env: python
     region: oregon
+    plan: free
+
     branch: main
 
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+
+    startCommand: |
+      cd backend
+      uvicorn main:app --host 0.0.0.0 --port $PORT
 
     envVars:
       - key: GROQ_API_KEY
